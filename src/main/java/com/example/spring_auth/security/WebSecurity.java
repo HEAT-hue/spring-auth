@@ -4,12 +4,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -48,23 +46,32 @@ public class WebSecurity {
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-        authProvider.setUserDetailsService(userDetailsService());
-        authProvider.setPasswordEncoder(passwordEncoder());
+        try {
+            authProvider.setUserDetailsService(userDetailsService());
+            authProvider.setPasswordEncoder(passwordEncoder());
+        } catch (Exception ex) {
+            System.out.println("Exception caught from DAO");
+        }
         return authProvider;
     }
 
     @Bean
-    UserDetailsService userDetailsService() {
+    UserDetailsService userDetailsService() throws UsernameNotFoundException {
         return new UserDetailsService() {
             @Override
             public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+                System.out.println("User details incoming username = " + username);
                 Map<String, String> map = new HashMap<>();
                 map.put("martin", passwordEncoder().encode("123"));
                 if (map.containsKey(username)) {
+                    System.out.println("user found!");
                     // Return User
-                    return new User(username, map.get(username), new ArrayList<>());
+                    User user = new User(username, map.get(username), new ArrayList<>());
+                    System.out.println(user);
+                    return user;
                 }
                 // user not found? throw exception
+                System.out.println("User not found!");
                 throw new UsernameNotFoundException(username);
             }
         };
@@ -74,20 +81,12 @@ public class WebSecurity {
     // Configure spring security filter chain
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-                .csrf(AbstractHttpConfigurer::disable)
-                .authorizeHttpRequests(auth -> auth
-                        // Specify public endpoints here
-                        .requestMatchers("/home").permitAll()
-                        .requestMatchers("/login").permitAll()
+        http.csrf((csrf) -> csrf.ignoringRequestMatchers("/login")).authorizeHttpRequests(auth -> auth
+                // Specify public endpoints here
+                .requestMatchers("/hello").permitAll().requestMatchers("/login").permitAll()
 
-                        // authenticate all endpoints
-                        .anyRequest().authenticated()
-                )
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
-                .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
+                // authenticate all endpoints
+                .anyRequest().authenticated()).sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)).addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

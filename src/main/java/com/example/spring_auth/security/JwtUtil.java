@@ -17,22 +17,30 @@ public class JwtUtil {
     // Secret key to sign the jwt
     private String SECRET_KEY;
 
+    // Expiry time for tokens
+    private static final int expireInMs = 300 * 1000;
+
     @Autowired
     public JwtUtil(Environment env) {
         this.env = env;
-        this.SECRET_KEY = env.getProperty("jwt_key", "someDefaultkeys");
+        this.SECRET_KEY = env.getProperty("jwtKey", "someDefaultkeys");
     }
 
     // Generate token
     public String generateToken(String username) {
-        String token = Jwts.builder()
-                // Add username
-                .setSubject(username)
-                .setIssuedAt(new Date())
-//                .setExpiration(new Date(String.valueOf(10)))
-                .setExpiration(new Date(env.getProperty("jwtExpiration", String.valueOf(10))))
-                .signWith(SignatureAlgorithm.HS256, SECRET_KEY)
-                .compact();
+        System.out.println("Generating token");
+        String token = "";
+        try {
+            token = Jwts.builder()
+                    // Add username
+                    .setSubject(username)
+                    .setIssuedAt(new Date(System.currentTimeMillis()))
+                    .setExpiration(new Date(System.currentTimeMillis() + expireInMs))
+                    .signWith(SignatureAlgorithm.HS256, SECRET_KEY)
+                    .compact();
+        } catch (Exception ex) {
+            System.out.println(ex.getMessage());
+        }
         System.out.println(token);
         return token;
     }

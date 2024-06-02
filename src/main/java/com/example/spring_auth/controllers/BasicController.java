@@ -28,8 +28,6 @@ public class BasicController {
 
     @PostMapping("/login")
     public ResponseEntity<JwtResponse> login(@RequestBody JwtRequestDTO jwtRequestDTO) {
-        String response = "Login success!\nusername: " + jwtRequestDTO.getUsername() + "\npassword: " + jwtRequestDTO.getPassword();
-
         // Create Authentication token which is used for authentication by auth provider
         UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(jwtRequestDTO.getUsername(), jwtRequestDTO.getPassword(), null);
 
