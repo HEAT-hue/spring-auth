@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: spring-auth
+
+  # Default auth for spring security
+  security:
+    user:
+      name: user
+      password: root
+
+  # Devtools auto restart
+  devtools:
+    restart:
+      enabled: true
+
+# JWT Expiration
+jwtExpiration: 10
